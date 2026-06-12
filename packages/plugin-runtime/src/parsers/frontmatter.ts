@@ -24,12 +24,39 @@ type StackEntry = {
 
 export function parseFrontmatter(src: string): { data: FrontmatterObject; body: string } {
   const text = src.replace(/^﻿/, '');
-  const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/.exec(text);
-  if (!match) return { data: {}, body: text };
-  const yaml = match[1] ?? '';
-  const body = match[2] ?? '';
+
+  let markerStart = -1;
+  if (text.startsWith('---\n')) {
+    markerStart = 4;
+  } else if (text.startsWith('---\r\n')) {
+    markerStart = 5;
+  } else {
+    return { data: {}, body: text };
+  }
+
+  const closeIndex = text.indexOf('\n---', markerStart);
+  if (closeIndex === -1) {
+    return { data: {}, body: text };
+  }
+
+  const hasCrBeforeDelimiter = text[closeIndex - 1] === '\r';
+  const yamlEnd = hasCrBeforeDelimiter ? closeIndex - 1 : closeIndex;
+  const yamlRaw = text.slice(markerStart, yamlEnd);
+  const yaml = yamlRaw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  let bodyStart = closeIndex + 4;
+  if (bodyStart < text.length) {
+    if (text.startsWith('\r\n', bodyStart)) {
+      bodyStart += 2;
+    } else if (text[bodyStart] === '\n' || text[bodyStart] === '\r') {
+      bodyStart += 1;
+    }
+  }
+
+  const body = text.slice(bodyStart);
   return { data: parseYamlSubset(yaml), body };
 }
+
 
 function parseYamlSubset(src: string): FrontmatterObject {
   const lines = src.split(/\r?\n/);
