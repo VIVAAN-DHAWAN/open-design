@@ -117,4 +117,12 @@ describe('parseFrontmatter', () => {
     expect(Object.keys(data)).toHaveLength(0);
     expect(body).toBe('# heading');
   });
+
+  it('rejects invalid closing delimiters like ---- or ---foo', () => {
+    const raw1 = '---\nname: foo\n----\nbody';
+    expect(parseFrontmatter(raw1)).toEqual({ data: {}, body: raw1 });
+
+    const raw2 = '---\nname: foo\n---foo\nbody';
+    expect(parseFrontmatter(raw2)).toEqual({ data: {}, body: raw2 });
+  });
 });

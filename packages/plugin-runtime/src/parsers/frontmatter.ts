@@ -34,9 +34,16 @@ export function parseFrontmatter(src: string): { data: FrontmatterObject; body: 
     return { data: {}, body: text };
   }
 
-  const closeIndex = text.indexOf('\n---', markerStart);
-  if (closeIndex === -1) {
-    return { data: {}, body: text };
+  let closeIndex = markerStart - 1;
+  while (true) {
+    closeIndex = text.indexOf('\n---', closeIndex + 1);
+    if (closeIndex === -1) {
+      return { data: {}, body: text };
+    }
+    const nextChar = text[closeIndex + 4];
+    if (nextChar === undefined || nextChar === '\n' || nextChar === '\r') {
+      break;
+    }
   }
 
   const hasCrBeforeDelimiter = text[closeIndex - 1] === '\r';
